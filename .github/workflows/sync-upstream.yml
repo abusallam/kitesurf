@@ -1,0 +1,27 @@
+name: Sync upstream
+on:
+  schedule:
+    - cron: '17 4 * * 1'  # weekly, Mondays
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sync fork from upstream
+        run: |
+          git remote add upstream https://github.com/cloudflare/kitesurf.git
+          git fetch upstream main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse upstream/main)" ]; then
+            git merge --ff-only upstream/main
+            git push origin main
+            echo "SYNCED to $(git rev-parse --short upstream/main)"
+          else
+            echo "Already up to date"
+          fi
